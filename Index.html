@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Desafio da Garrafa</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(#e0f2ff, #ffffff);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overflow: hidden;
+    }
+
+    .stage {
+      position: relative;
+      width: 200px;
+      height: 240px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ground {
+      position: absolute;
+      bottom: 20px;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: rgba(0, 0, 0, 0.08);
+    }
+
+    .shadow {
+      position: absolute;
+      bottom: 25px;
+      width: 80px;
+      height: 12px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.2);
+      filter: blur(2px);
+      transition: width 0.25s ease, opacity 0.25s ease;
+    }
+
+    .bottle {
+      position: relative;
+      width: 60px;
+      height: 150px;
+      cursor: pointer;
+      transform-origin: 50% 85%;
+    }
+
+    .bottle-body {
+      position: absolute;
+      bottom: 20px;
+      width: 100%;
+      height: 110px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, #e3f5ff 0%, #b5e3ff 40%, #7fd5ff 100%);
+      border: 2px solid #66b7e6;
+      overflow: hidden;
+    }
+
+    .water {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 60%;
+      background: linear-gradient(180deg, #6fd3ff 0%, #36a9e0 100%);
+      box-shadow: inset 0 0 12px rgba(0, 150, 255, 0.5);
+    }
+
+    .bottle-body::before {
+      content: "";
+      position: absolute;
+      top: 10px;
+      left: 8px;
+      width: 10px;
+      height: 80%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.8), rgba(255,255,255,0));
+      border-radius: 999px;
+      opacity: 0.9;
+    }
+
+    .neck {
+      position: absolute;
+      bottom: 130px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 28px;
+      height: 22px;
+      background: linear-gradient(180deg, #e3f5ff, #c8ebff);
+      border: 2px solid #66b7e6;
+      border-radius: 10px;
+    }
+
+    .cap {
+      position: absolute;
+      bottom: 152px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 32px;
+      height: 14px;
+      background: linear-gradient(180deg, #1d9bf0, #0f73c7);
+      border-radius: 4px;
+      box-shadow: 0 3px 4px rgba(15, 118, 210, 0.5);
+    }
+
+    .cap::before {
+      content: "";
+      position: absolute;
+      inset: 2px;
+      border-top: 2px solid rgba(255,255,255,0.7);
+      border-radius: 3px;
+    }
+
+    .bottle.flip-success,
+    .bottle.flip-fail {
+      animation-duration: 1.1s;
+      animation-timing-function: cubic-bezier(0.25, 0.85, 0.25, 1.15);
+      animation-fill-mode: forwards;
+    }
+
+    @keyframes flipSuccessNatural {
+      0% { transform: translateY(0) rotate(0deg); }
+      20% { transform: translateY(-45px) rotate(-130deg); }
+      40% { transform: translateY(-150px) rotate(-300deg); }
+      65% { transform: translateY(-70px) rotate(-510deg); }
+      90% { transform: translateY(0) rotate(-360deg); }
+      100% { transform: translateY(0) rotate(0deg); }
+    }
+
+    @keyframes flipFailNatural {
+      0% { transform: translateY(0) rotate(0deg); }
+      25% { transform: translateY(-50px) rotate(-140deg); }
+      50% { transform: translateY(-150px) rotate(-320deg); }
+      75% { transform: translateY(-60px) rotate(-430deg); }
+      100% { transform: translateY(0) rotate(-90deg); }
+    }
+
+    .bottle.flip-success { animation-name: flipSuccessNatural; }
+    .bottle.flip-fail    { animation-name: flipFailNatural; }
+
+    .shadow.stand { width: 80px; opacity: 0.8; }
+    .shadow.fall  { width: 110px; opacity: 0.6; }
+
+    button {
+      padding: 10px 22px;
+      font-size: 16px;
+      border: none;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #0ea5e9, #22c55e);
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+    }
+
+    button:active {
+      transform: scale(0.95);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="stage">
+    <div class="ground"></div>
+    <div class="shadow stand" id="shadow"></div>
+
+    <div class="bottle" id="bottle">
+      <div class="bottle-body">
+        <div class="water"></div>
+      </div>
+      <div class="neck"></div>
+      <div class="cap"></div>
+    </div>
+  </div>
+
+  <button id="btnFlip">Jogar a garrafa</button>
+
+  <script>
+    var bottle = document.getElementById("bottle");
+    var btn    = document.getElementById("btnFlip");
+    var shadow = document.getElementById("shadow");
+    var animando = false;
+
+    function jogar() {
+      if (animando) return;
+      animando = true;
+
+      var caiuEmPe = Math.random() < 0.5;
+
+      bottle.classList.remove("flip-success");
+      bottle.classList.remove("flip-fail");
+      shadow.classList.remove("stand");
+      shadow.classList.remove("fall");
+
+      bottle.offsetWidth; // força reflow
+
+      bottle.classList.add(caiuEmPe ? "flip-success" : "flip-fail");
+
+      function fim() {
+        animando = false;
+
+        if (caiuEmPe) {
+          shadow.classList.add("stand");
+          bottle.style.transform = "translateY(0) rotate(0deg)";
+        } else {
+          shadow.classList.add("fall");
+          bottle.style.transform = "translateY(0) rotate(-90deg)";
+        }
+
+        bottle.removeEventListener("animationend", fim);
+        bottle.removeEventListener("webkitAnimationEnd", fim);
+      }
+
+      bottle.addEventListener("animationend", fim);
+      bottle.addEventListener("webkitAnimationEnd", fim);
+    }
+
+    bottle.addEventListener("click", jogar);
+    btn.addEventListener("click", jogar);
+    btn.addEventListener("touchstart", function(e){
+      e.preventDefault();
+      jogar();
+    });
+  </script>
+
+</body>
+</html>
